@@ -1,0 +1,79 @@
+# Painel de Inteligência Territorial
+
+App mobile (React Native + Expo) que funciona como um painel de inteligência territorial para um gestor público: acompanha água, energia, resíduos e demanda por serviços por bairro, **antecipa problemas** com alertas preditivos e **apoia a decisão humana**, sem automatizar decisões de alto impacto.
+
+> Projeto da Global Solution 2026 — Cross-Platform Application Development (Ciência da Computação, turma de fevereiro, FIAP).
+
+## Integrantes
+
+| Nome completo | RM |
+|---|---|
+| Guilherme Willians de Souza Inácio | 565319 |
+| Kauã da Silva Lazarim | 564625 |
+
+## Funcionalidades
+
+- **Dashboard**: indicadores (KPIs) por bairro ou cidade toda, gráfico de barras com os últimos 14 dias e a previsão dos próximos 7 dias, e previsão do clima.
+- **Alertas preditivos**: cada alerta traz **justificativa**, **nível de confiança** e **limitações**.
+- **Apoio à decisão**: o gestor escolhe uma ação (acionar equipe, manter monitoramento ou descartar), escreve uma justificativa obrigatória e confirma. O app **não executa nenhuma ação automática**; tudo fica em histórico.
+- **Ocorrências da comunidade**: formulário com validação; contato opcional apenas com consentimento.
+- **Ajustes**: sensibilidade dos alertas (limiar de 5% a 60%) e exclusão de todos os dados locais.
+
+## Requisitos técnicos atendidos
+
+| Requisito | Onde |
+|---|---|
+| React Native (Expo) | `App.js`, `src/` |
+| Navegação entre telas | Abas + pilha (`@react-navigation`) em `App.js` |
+| Gerenciamento de estado | Context API + `useReducer` em `src/state/AppContext.js` |
+| Consumo de APIs | Open-Meteo em `src/services/weatherApi.js` |
+| Persistência de dados | AsyncStorage em `src/storage/storage.js` (decisões, ocorrências, ajustes, cache do clima) |
+| Formulários com validação | `ReportScreen`, `AlertDetailScreen`, `SettingsScreen` |
+| Componentes reutilizáveis e identidade visual | `src/components/*` e `src/theme.js` (paleta verde-azulada) |
+| Acessibilidade | `accessibilityRole/Label/Hint/State`, regiões ativas para erros, alvos de toque ≥ 40–48 px, contraste alto, gráfico com descrição textual |
+| Privacidade | Sem identificadores pessoais, dados agregados por bairro, dados só no dispositivo, contato opcional com consentimento, botão de apagar dados |
+
+## Fontes de dados
+
+1. **Dados sintéticos** (`src/data/syntheticData.js`): séries de 30 dias de consumo de água (m³/dia), energia (MWh/dia), resíduos (t/dia) e chamados por dia para 4 áreas fictícias (Centro, Jardim das Flores, Vila Nova, Zona Rural Norte). São gerados de forma determinística (tendência + sazonalidade semanal + ruído).
+2. **Open-Meteo** (https://open-meteo.com): API pública e gratuita, sem chave, usada para a previsão de temperatura máxima e chuva (7 dias) em um ponto de referência (Santo André – SP).
+
+## Como o alerta é calculado
+
+- **Tendência**: regressão linear sobre os últimos 30 dias projeta os próximos 7. Se a média prevista superar a média histórica em pelo menos o limiar configurado (padrão 15%), gera-se um alerta. Severidade alta quando a variação é ≥ 25%.
+- **Confiança**: derivada do R² do ajuste (≥ 70% alta; ≥ 40% média; abaixo, baixa).
+- **Clima**: calor (máxima ≥ 33 °C) e chuva acumulada (≥ 60 mm em 7 dias) geram alertas com confiança indicativa média.
+
+## Limitações
+
+- Os dados de consumo **não são reais**; servem para demonstração. Em produção seriam substituídos por dados autorizados das concessionárias e da prefeitura.
+- O modelo é propositalmente simples (sem sazonalidade, feriados ou eventos extremos). A confiança mede o ajuste da tendência, não a probabilidade de o evento ocorrer.
+- Os limiares de clima são ilustrativos e precisam de calibração local.
+- O clima vem de um único ponto de referência; microclimas por bairro não são considerados.
+- A persistência é local (AsyncStorage); não há sincronização entre dispositivos nem autenticação.
+
+## Como executar
+
+```bash
+npm install
+npx expo install --fix   # alinha as versões das dependências ao SDK do Expo
+npx expo start
+```
+
+Abra no celular com o app **Expo Go** (QR code) ou use um emulador (`a` para Android, `i` para iOS). Requer Node 18+.
+
+## Estrutura
+
+```
+App.js                      navegação (abas + pilha) e providers
+src/
+  components/               Card, Button, Chip, Badge, TextField, BarChart, AlertCard
+  data/syntheticData.js     dados sintéticos
+  screens/                  Dashboard, Alertas, Detalhe do alerta, Ocorrências, Ajustes
+  services/                 forecast.js (previsão/alertas), weatherApi.js (Open-Meteo)
+  state/AppContext.js       estado global (Context + useReducer)
+  storage/storage.js        persistência (AsyncStorage)
+  utils/format.js           formatação
+  theme.js                  cores e espaçamentos (identidade visual)
+```
+#
